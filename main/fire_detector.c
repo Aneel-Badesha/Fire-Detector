@@ -16,6 +16,15 @@ typedef enum {
 
 trigger_states trigger = NO_ALARM;
 
+// Buffer for averaging flame readings
+// 5 samples at 1 second intervals
+#define FLAME_BUFFER_SIZE 5
+#define FLAME_THRESHOLD 20
+
+uint32_t flame_buffer[FLAME_BUFFER_SIZE] = {0};
+uint32_t buffer_index = 0;
+bool buffer_full = false;
+
 SemaphoreHandle_t mutex;
 
 void sensor_read_task(void *pvParameter) {
@@ -37,11 +46,31 @@ void sensor_read_task(void *pvParameter) {
         uint32_t flame_voltage = adc_raw_to_voltage(flame_raw);
         uint32_t flame_intensity = voltage_to_flame_intensity(flame_voltage);
 
-        if (flame_intensity != 0)
+        // Add current reading to circular buffer
+        flame_buffer[buffer_index] = flame_intensity;
+        buffer_index = (buffer_index + 1) % FLAME_BUFFER_SIZE;
+        
+        // Mark buffer as full after first complete cycle
+        if (buffer_index == 0 && !buffer_full) {
+            buffer_full = true;
+        }
+
+        // Calculate average of readings in buffer
+        uint32_t sum = 0;
+        uint32_t count = buffer_full ? FLAME_BUFFER_SIZE : buffer_index;
+        
+        for (int i = 0; i < count; i++) {
+            sum += flame_buffer[i];
+        }
+        
+        uint32_t avg_flame_intensity = (count > 0) ? (sum / count) : 0;
+        
+        // Check if average exceeds threshold
+        if (avg_flame_intensity >= FLAME_THRESHOLD)
         {
             ESP_LOGI("flame sensor", "Flame Detected, Alarm triggered");
             
-            if (xSemaphoreTake(mutex, portMAX_DELAY)) { // wait forever until acquired
+            if (xSemaphoreTake(mutex, portMAX_DELAY)) {
                 // Critical section: safe to access shared resource
                 trigger = ALARM_TRIGGERED;
                 xSemaphoreGive(mutex); // release mutex
