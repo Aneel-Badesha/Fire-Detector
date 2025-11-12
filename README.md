@@ -26,7 +26,7 @@ ESP-IDF project for fire detection system that monitors flame sensors and sends 
 ## Build and Flash
 
 ```bash
-cd C:\Espressif\frameworks\esp-idf-v5.5.1\projects\fire_detector
+cd C:\fire_detector
 idf.py build
 idf.py flash monitor
 ```
@@ -34,6 +34,6 @@ idf.py flash monitor
 ## Configuration
 
 Update WiFi credentials in `main/fire_detector.c`:
-- SSID: <WIFI Name>
-- Password: <Password>
-- Raspberry Pi IP: <RPI IP Address>:<Port>
+- SSID: "WIFI Name"
+- Password: "Password"
+- Raspberry Pi IP: "RPI IP Address":"Port"
