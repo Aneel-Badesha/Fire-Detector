@@ -34,6 +34,6 @@ idf.py flash monitor
 ## Configuration
 
 Update WiFi credentials in `main/fire_detector.c`:
-- SSID: "******"
-- Password: "******"
-- Raspberry Pi IP: 192.168.1.90:5000
+- SSID: <WIFI Name>
+- Password: <Password>
+- Raspberry Pi IP: <RPI IP Address>:<Port>
