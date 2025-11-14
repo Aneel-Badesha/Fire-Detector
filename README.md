@@ -39,8 +39,8 @@ idf.py flash monitor
 ### WiFi Settings
 Update in `main/fire_detector.c` (lines 94-95):
 ```c
-const char* ssid = "BadeshaHome";
-const char* password = "Canucks@2011";
+const char* ssid = "Wifi Name";
+const char* password = "Wifi Password";
 ```
 
 ### Raspberry Pi Server
