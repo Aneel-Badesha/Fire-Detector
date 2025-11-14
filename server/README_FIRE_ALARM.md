@@ -69,40 +69,36 @@ curl -X POST -H "Content-Type: application/json" \
 
 ## ESP32 Integration
 
-Your ESP32 should send HTTP POST requests to:
+Your ESP32 fire detector sends HTTP POST requests to:
 ```
 URL: http://192.168.1.90:5000/alert
 Method: POST
 Content-Type: application/json
-Body: {"msg":"Fire detected in zone X","sensor":"ESP32-XXX"}
+Body: {"msg":"Alarm Triggered","sensor":"ESP32"}
 ```
 
-### Example ESP32 Code (Arduino/PlatformIO)
-```cpp
-#include <WiFi.h>
-#include <HTTPClient.h>
+### Actual ESP-IDF Implementation
+The fire detector project uses ESP-IDF native HTTP client (not Arduino):
 
-const char* ssid = "YOUR_WIFI_SSID";
-const char* password = "YOUR_WIFI_PASSWORD";
-const char* serverUrl = "http://192.168.1.90:5000/alert";
+**WiFi Configuration** (`main/fire_detector.c`):
+```c
+const char* ssid = "BadeshaHome";
+const char* password = "Canucks@2011";
+wifi_set_rpi_address("192.168.1.90", 5000);
+```
 
-void sendFireAlert() {
-  if (WiFi.status() == WL_CONNECTED) {
-    HTTPClient http;
-    http.begin(serverUrl);
-    http.addHeader("Content-Type", "application/json");
-    
-    String jsonPayload = "{\"msg\":\"Fire detected!\",\"sensor\":\"ESP32-001\"}";
-    int httpResponseCode = http.POST(jsonPayload);
-    
-    if (httpResponseCode > 0) {
-      Serial.printf("Alert sent, response: %d\n", httpResponseCode);
-    } else {
-      Serial.printf("Error sending alert: %s\n", http.errorToString(httpResponseCode).c_str());
-    }
-    http.end();
-  }
-}
+**Alert Trigger Logic**:
+- Sensor polled every 1 second
+- 5-second rolling average calculated from circular buffer
+- Alert sent when average flame intensity ≥ 20
+- HTTP POST with JSON: `{"msg":"Alarm Triggered"}`
+- Mutex-protected state to prevent duplicate alerts
+
+**Task Architecture**:
+1. `sensor_read_task`: Polls GPIO34 ADC, updates rolling average
+2. `send_message_task`: Sends HTTP POST when alarm triggered
+3. `led_flash_task`: Flashes LED indicator during alarm
+4. `button_reset_task`: Manual reset via GPIO23 button
 ```
 
 ## Firewall Configuration
